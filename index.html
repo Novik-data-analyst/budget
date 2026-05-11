@@ -343,12 +343,21 @@ function addExpense() {
   var expense = { date: date, time: time, amount: amt, category: cat, note: note, source: source };
 
   api('POST', { action: 'addExpense', date: date, time: time, amount: amt, category: cat, note: note, source: source })
-    .then(function() {
+    .then(function(resp) {
       STATE.expenses.push(expense);
       document.getElementById('expAmount').value = '';
       document.getElementById('expNote').value = '';
       recalculate();
-      toast('$' + amt.toFixed(2) + ' added');
+      // Show sheet write result
+      if (resp && resp.cell) {
+        toast('$' + amt.toFixed(2) + ' → ' + resp.cell + (resp.overwrite ? ' (accumulated)' : ''), 3000);
+      } else if (resp && resp.error) {
+        toast('Saved to log, but sheet write failed: ' + resp.error, 4000);
+      } else if (resp && !resp.cell && STATE.settings.sourceSheet) {
+        toast('$' + amt.toFixed(2) + ' saved (sheet: no sourceSheet set)', 3000);
+      } else {
+        toast('$' + amt.toFixed(2) + ' added');
+      }
     })
     .catch(function() { toast('Save failed — try again'); })
     .finally(function() { btn.disabled = false; btn.textContent = 'Add expense'; });
